@@ -92,7 +92,7 @@ private fun ThemeCustomizer(theme: ThemeConfig, onChange: (ThemeConfig) -> Unit,
         Column(Modifier.padding(horizontal = 22.dp, vertical = 8.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Text("Оформление", style = MaterialTheme.typography.headlineSmall)
             Text("Все изменения применяются сразу и сохраняются только на этом устройстве.", color = Muted, fontSize = 12.sp)
-            ThemeOptionRow("Базовая тема", listOf("midnight" to "Ночь", "paper" to "Бумага", "forest" to "Лес", "ocean" to "Океан", "rose" to "Роза"), theme.preset) { onChange(theme.copy(preset = it)) }
+            ThemeOptionRow("Базовая тема", listOf("midnight" to "Ночь", "amazed_black" to "Amazed Black", "paper" to "Бумага", "forest" to "Лес", "ocean" to "Океан", "rose" to "Роза"), theme.preset) { onChange(theme.copy(preset = it)) }
             ThemeOptionRow("Акцент", listOf("lilac" to "Лиловый", "mint" to "Мята", "sky" to "Небо", "peach" to "Персик", "rose" to "Роза", "lemon" to "Лимон"), theme.accent) { onChange(theme.copy(accent = it)) }
             ThemeOptionRow("Скругления", listOf("compact" to "Строго", "soft" to "Мягко", "round" to "Кругло"), theme.cornerStyle) { onChange(theme.copy(cornerStyle = it)) }
             TextButton(onClick = { onChange(ThemeConfig()) }, modifier = Modifier.align(Alignment.End)) { Text("Сбросить оформление") }
@@ -114,7 +114,7 @@ private fun ThemeOptionRow(title: String, options: List<Pair<String, String>>, s
     }
 }
 
-private fun themeLabel(value: String) = mapOf("midnight" to "Ночь", "paper" to "Бумага", "forest" to "Лес", "ocean" to "Океан", "rose" to "Роза")[value] ?: "Ночь"
+private fun themeLabel(value: String) = mapOf("midnight" to "Ночь", "amazed_black" to "Amazed Black", "paper" to "Бумага", "forest" to "Лес", "ocean" to "Океан", "rose" to "Роза")[value] ?: "Ночь"
 private fun accentLabel(value: String) = mapOf("lilac" to "Лиловый", "mint" to "Мята", "sky" to "Небо", "peach" to "Персик", "rose" to "Роза", "lemon" to "Лимон")[value] ?: "Лиловый"
 private fun cornerLabel(value: String) = mapOf("compact" to "Строго", "soft" to "Мягко", "round" to "Кругло")[value] ?: "Мягко"
 
