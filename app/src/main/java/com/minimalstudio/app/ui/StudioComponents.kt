@@ -66,7 +66,7 @@ fun StudioIsland(kind: String, onKind: (String) -> Unit, hasPriority: Boolean = 
         label = "islandPull"
     )
     val islandScale by animateFloatAsState(if (dragging) 0.97f else idleScale, spring(stiffness = Spring.StiffnessMediumLow), label = "islandPress")
-    val indicatorOffset = ((widthPx - 10.dp.value) / 2f * indicatorFraction).roundToInt()
+    val indicatorOffset = (widthPx / 2f * indicatorFraction).roundToInt()
     val dragState = rememberDraggableState { amount ->
         val beforeIdea = dragFraction >= 0.5f
         val raw = (dragFraction + amount / (widthPx / 2f)).coerceIn(0f, 1f)
@@ -79,10 +79,10 @@ fun StudioIsland(kind: String, onKind: (String) -> Unit, hasPriority: Boolean = 
 
     Box(
         modifier = modifier
-            .width(188.dp)
-            .height(48.dp)
+            .width(224.dp)
+            .height(60.dp)
             .clip(CircleShape)
-            .background(Surface)
+            .background(SurfaceRaised)
             .onSizeChanged { widthPx = it.width.toFloat() }
             .graphicsLayer { scaleX = islandScale; scaleY = islandScale }
             .draggable(
@@ -121,8 +121,7 @@ fun StudioIsland(kind: String, onKind: (String) -> Unit, hasPriority: Boolean = 
             listOf(CardKind.WISH to "Хотелки", CardKind.IDEA to "Идеи").forEach { (value, title) ->
             val active = kind == value
             val fg by animateColorAsState(if (active) Ink else Muted, animationSpec = spring(), label = "islandText")
-            val textScale by animateFloatAsState(if (active) 1.06f else 0.94f, spring(stiffness = Spring.StiffnessMediumLow), label = "islandTextScale")
-            val textLift by animateFloatAsState(if (active) -2f else 2f, spring(stiffness = Spring.StiffnessMediumLow), label = "islandTextLift")
+            val textScale by animateFloatAsState(if (active) 1.03f else 0.96f, spring(stiffness = Spring.StiffnessMediumLow), label = "islandTextScale")
             val iconScale by animateFloatAsState(if (active) 1.12f else 0.82f, spring(stiffness = Spring.StiffnessMediumLow), label = "islandIconScale")
             Box(
                 modifier = Modifier
@@ -134,9 +133,9 @@ fun StudioIsland(kind: String, onKind: (String) -> Unit, hasPriority: Boolean = 
                     },
                 contentAlignment = Alignment.Center
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp), modifier = Modifier.graphicsLayer { scaleX = textScale; scaleY = textScale; translationY = textLift }) {
-                    Icon(if (value == CardKind.WISH) Icons.Default.FavoriteBorder else Icons.Default.Lightbulb, null, tint = fg, modifier = Modifier.size(14.dp).graphicsLayer { scaleX = iconScale; scaleY = iconScale; rotationZ = if (active) 0f else -4f })
-                    Text(title, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = fg)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.graphicsLayer { scaleX = textScale; scaleY = textScale }) {
+                    Icon(if (value == CardKind.WISH) Icons.Default.FavoriteBorder else Icons.Default.Lightbulb, null, tint = fg, modifier = Modifier.size(16.dp).graphicsLayer { scaleX = iconScale; scaleY = iconScale; rotationZ = if (active) 0f else -4f })
+                    Text(title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = fg)
                     if (hasPriority && !active) Box(Modifier.size(6.dp).clip(CircleShape).background(Rose).graphicsLayer { alpha = 0.85f + pull * 0.15f })
                 }
             }
