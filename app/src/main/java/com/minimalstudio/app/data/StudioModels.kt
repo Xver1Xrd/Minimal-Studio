@@ -21,6 +21,7 @@ data class StudioCard(
     val description: String = "",
     val notes: String = "",
     val price: String = "",
+    @ColumnInfo(defaultValue = "'[]'") val priceHistoryJson: String = "[]",
     @ColumnInfo(defaultValue = "''") val savedAmount: String = "",
     val url: String = "",
     val collection: String = "",
@@ -52,6 +53,21 @@ data class StudioAttachment(
 }
 
 data class StudioTask(val text: String, val done: Boolean = false)
+data class PricePoint(val amount: Long, val timestamp: Long)
+
+fun readPriceHistory(serialized: String): List<PricePoint> = try {
+    val array = JSONArray(serialized)
+    (0 until array.length()).mapNotNull { index ->
+        val item = array.getJSONObject(index)
+        PricePoint(item.optLong("amount"), item.optLong("timestamp")).takeIf { it.amount > 0L && it.timestamp > 0L }
+    }.sortedBy { it.timestamp }
+} catch (_: Exception) { emptyList() }
+
+fun writePriceHistory(points: List<PricePoint>): String = JSONArray().apply {
+    points.takeLast(120).forEach { point ->
+        put(JSONObject().put("amount", point.amount).put("timestamp", point.timestamp))
+    }
+}.toString()
 
 fun readTasks(serialized: String): List<StudioTask> = try {
     val array = JSONArray(serialized)
@@ -78,7 +94,7 @@ fun writeLinkedIds(ids: List<String>): String = JSONArray().apply {
 
 fun StudioCard.toJson(): JSONObject = JSONObject().apply {
     put("id", id); put("kind", kind); put("title", title)
-    put("description", description); put("notes", notes); put("price", price); put("savedAmount", savedAmount)
+    put("description", description); put("notes", notes); put("price", price); put("priceHistoryJson", priceHistoryJson); put("savedAmount", savedAmount)
     put("url", url); put("collection", collection); put("category", category)
     put("tags", tags); put("status", status); put("priority", priority)
     put("tasksJson", tasksJson); put("linkedIds", linkedIds); put("coverPath", coverPath)
@@ -93,6 +109,7 @@ fun JSONObject.asCard(): StudioCard = StudioCard(
     description = optString("description"),
     notes = optString("notes"),
     price = optString("price"),
+    priceHistoryJson = optString("priceHistoryJson", "[]"),
     savedAmount = optString("savedAmount"),
     url = optString("url"),
     collection = optString("collection"),

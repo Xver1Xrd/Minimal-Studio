@@ -13,6 +13,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
@@ -34,6 +35,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -43,6 +45,7 @@ import com.minimalstudio.app.data.CardKind
 import com.minimalstudio.app.data.StudioAttachment
 import com.minimalstudio.app.data.StudioCard
 import java.io.File
+import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,7 +93,21 @@ fun HomeScreen(
     }
     val allVisibleSelected = visible.isNotEmpty() && visible.all { it.id in selected }
 
-    Box(Modifier.fillMaxSize()) {
+    var swipeDistance by remember { mutableFloatStateOf(0f) }
+    Box(
+        Modifier.fillMaxSize().pointerInput(kind) {
+            detectHorizontalDragGestures(
+                onDragStart = { swipeDistance = 0f },
+                onHorizontalDrag = { _, amount -> swipeDistance += amount },
+                onDragEnd = {
+                    if (abs(swipeDistance) > 80f) {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onKind(if (kind == CardKind.WISH) CardKind.IDEA else CardKind.WISH)
+                    }
+                }
+            )
+        }
+    ) {
         Column(Modifier.fillMaxSize()) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 11.dp, start = 21.dp, end = 21.dp),

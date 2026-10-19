@@ -22,7 +22,7 @@ assert 'targetSdk = 35' in build
 
 db = (root / 'app/src/main/java/com/minimalstudio/app/data/StudioDatabase.kt').read_text()
 repo = (root / 'app/src/main/java/com/minimalstudio/app/data/StudioRepository.kt').read_text()
-assert 'version = 3' in db and 'MIGRATION_1_2' in db and 'MIGRATION_2_3' in db
+assert 'version = 4' in db and 'MIGRATION_1_2' in db and 'MIGRATION_2_3' in db and 'MIGRATION_3_4' in db
 assert 'fallbackToDestructiveMigration' not in db
 assert 'database.withTransaction' in repo and 'copyLimited' in repo
 assert 'suspend fun restoreCard' in repo and 'suspend fun emptyTrash' in repo

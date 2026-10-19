@@ -43,9 +43,16 @@ class StudioRepository(private val context: Context, private val database: Studi
             val cover = remaining.firstOrNull { it.isImage }?.path.orEmpty()
             database.withTransaction {
                 val existing = dao.byId(card.id)
+                val previousHistory = existing?.priceHistoryJson ?: card.priceHistoryJson
+                val newAmount = card.price.filter(Char::isDigit).toLongOrNull() ?: 0L
+                val history = readPriceHistory(previousHistory).toMutableList()
+                if (newAmount > 0L && history.lastOrNull()?.amount != newAmount) {
+                    history += PricePoint(newAmount, System.currentTimeMillis())
+                }
                 dao.putCard(card.copy(
                     createdAt = existing?.createdAt ?: card.createdAt,
                     deletedAt = existing?.deletedAt ?: 0,
+                    priceHistoryJson = writePriceHistory(history),
                     coverPath = cover,
                     updatedAt = System.currentTimeMillis()
                 ))

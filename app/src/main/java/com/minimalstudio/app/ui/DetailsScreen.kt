@@ -3,6 +3,7 @@ package com.minimalstudio.app.ui
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -18,6 +19,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -81,6 +84,7 @@ fun DetailsScreen(
                     Text(card.price, style = MaterialTheme.typography.headlineSmall, color = Accent)
                 }
             }
+            if (isWish) PriceTracker(card)
             if (isWish && card.price.isNotBlank() && card.savedAmount.isNotBlank()) {
                 val target = card.price.digitsAmount()
                 val saved = card.savedAmount.digitsAmount()
@@ -250,3 +254,85 @@ fun DetailsScreen(
 private fun dateText(timestamp: Long): String = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(Date(timestamp))
 
 private fun String.digitsAmount(): Long = filter(Char::isDigit).toLongOrNull() ?: 0L
+
+@Composable
+private fun PriceTracker(card: StudioCard) {
+    val history = remember(card.priceHistoryJson, card.price) {
+        readPriceHistory(card.priceHistoryJson).ifEmpty {
+            card.price.digitsAmount().takeIf { it > 0L }?.let { listOf(PricePoint(it, card.updatedAt)) }.orEmpty()
+        }
+    }
+    if (history.isEmpty()) return
+    val current = history.last().amount
+    val previous = history.dropLast(1).lastOrNull()?.amount
+    val average = history.map { it.amount }.average().toLong()
+    val minimum = history.minOf { it.amount }
+    val maximum = history.maxOf { it.amount }
+    val delta = previous?.let { current - it }
+    val status = when {
+        history.size < 2 -> "Первая запись"
+        current < average * .95 -> "Ниже средней"
+        current > average * 1.05 -> "Выше средней"
+        else -> "Обычная цена"
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+        StudioLabel("ТРЕКЕР ЦЕНЫ")
+        Surface(color = Surface, shape = RoundedCornerShape(20.dp)) {
+            Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(11.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(status, color = Accent, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        Text("${history.size} ${if (history.size == 1) "запись" else "записей"}", color = Muted, fontSize = 11.sp)
+                    }
+                    if (delta != null) {
+                        val down = delta < 0
+                        MetadataPill(
+                            text = "${if (down) "↓" else "↑"} ${formatPriceAmount(kotlin.math.abs(delta))}",
+                            color = if (down) Color(0xFF83E6C0) else Rose
+                        )
+                    }
+                }
+                PriceHistoryChart(history)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    PriceStat("МИН.", minimum)
+                    PriceStat("СРЕДНЯЯ", average)
+                    PriceStat("МАКС.", maximum)
+                }
+            }
+        }
+        Text("Цена добавляется в историю при сохранении изменённой стоимости.", color = Muted, fontSize = 11.sp)
+    }
+}
+
+@Composable
+private fun PriceHistoryChart(history: List<PricePoint>) {
+    val lineColor = Accent
+    Canvas(
+        Modifier.fillMaxWidth().height(78.dp)
+            .clip(RoundedCornerShape(14.dp)).background(SurfaceRaised)
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+    ) {
+        val min = history.minOf { it.amount }.toFloat()
+        val max = history.maxOf { it.amount }.toFloat()
+        val range = (max - min).takeIf { it > 0f } ?: 1f
+        val points = history.mapIndexed { index, item ->
+            val x = if (history.size == 1) size.width / 2f else size.width * index / (history.size - 1)
+            val y = size.height - ((item.amount - min) / range * size.height)
+            Offset(x, y)
+        }
+        points.zipWithNext().forEach { (from, to) -> drawLine(lineColor, from, to, strokeWidth = 4f, cap = StrokeCap.Round) }
+        points.forEachIndexed { index, point ->
+            drawCircle(if (index == points.lastIndex) Paper else lineColor.copy(alpha = .55f), radius = if (index == points.lastIndex) 5f else 3f, center = point)
+        }
+    }
+}
+
+@Composable
+private fun PriceStat(label: String, value: Long) {
+    Column {
+        Text(label, color = Muted, fontSize = 9.sp, fontWeight = FontWeight.SemiBold)
+        Text(formatPriceAmount(value), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+private fun formatPriceAmount(value: Long): String = "%,d ₽".format(Locale.US, value).replace(',', ' ')
