@@ -2,6 +2,9 @@ package com.minimalstudio.app.ui
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -10,6 +13,8 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -26,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
@@ -46,6 +52,7 @@ fun HomeScreen(
     attachments: List<StudioAttachment>,
     onKind: (String) -> Unit,
     onAdd: () -> Unit,
+    onAddKind: (String) -> Unit,
     onDetail: (String) -> Unit,
     onEdit: (StudioCard) -> Unit,
     onSettings: () -> Unit,
@@ -206,12 +213,12 @@ fun HomeScreen(
             }
         }
         if (selected.isEmpty()) {
-            FloatingActionButton(
-                onClick = onAdd,
-                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 24.dp, bottom = 94.dp),
-                shape = CircleShape,
-                containerColor = Accent, contentColor = Ink
-            ) { Icon(Icons.Default.Add, "Добавить карточку", modifier = Modifier.size(27.dp)) }
+            CreateCardFab(
+                kind = kind,
+                onCreate = onAdd,
+                onCreateKind = onAddKind,
+                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 24.dp, bottom = 94.dp)
+            )
         } else {
             Row(
                 modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 19.dp, vertical = 18.dp)
@@ -263,6 +270,66 @@ fun HomeScreen(
             },
             onDismiss = { deleting = null }
         )
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun CreateCardFab(kind: String, onCreate: () -> Unit, onCreateKind: (String) -> Unit, modifier: Modifier = Modifier) {
+    var quickMenu by remember { mutableStateOf(false) }
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val haptic = LocalHapticFeedback.current
+    val width by animateDpAsState(if (pressed || quickMenu) 154.dp else 58.dp, spring(), label = "createFabWidth")
+    val scale by animateFloatAsState(if (pressed) .93f else 1f, spring(), label = "createFabPress")
+
+    Box(modifier) {
+        AnimatedVisibility(
+            visible = quickMenu,
+            modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 70.dp),
+            enter = fadeIn() + slideInHorizontally { it / 2 },
+            exit = fadeOut() + slideOutHorizontally { it / 2 }
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.End) {
+                QuickCreateAction(Icons.Default.Lightbulb, "Быстрая идея") { onCreateKind(CardKind.IDEA); quickMenu = false }
+                QuickCreateAction(Icons.Default.FavoriteBorder, "Быстрая хотелка") { onCreateKind(CardKind.WISH); quickMenu = false }
+            }
+        }
+        Surface(
+            modifier = Modifier
+                .width(width)
+                .height(58.dp)
+                .graphicsLayer { scaleX = scale; scaleY = scale }
+                .combinedClickable(
+                    interactionSource = interaction,
+                    indication = null,
+                    onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onCreate() },
+                    onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); quickMenu = !quickMenu }
+                ),
+            shape = CircleShape,
+            color = Accent,
+            contentColor = Ink,
+            shadowElevation = 9.dp
+        ) {
+            Row(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                AnimatedContent(targetState = kind, label = "createFabIcon") { currentKind ->
+                    Icon(if (currentKind == CardKind.WISH) Icons.Default.FavoriteBorder else Icons.Default.Lightbulb, "Добавить", modifier = Modifier.size(25.dp))
+                }
+                AnimatedVisibility(visible = pressed || quickMenu, enter = fadeIn(), exit = fadeOut()) {
+                    Text(if (kind == CardKind.WISH) "Хотелка" else "Идея", fontWeight = FontWeight.SemiBold, maxLines = 1)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun QuickCreateAction(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
+    Surface(onClick = onClick, shape = CircleShape, color = SurfaceRaised, shadowElevation = 6.dp) {
+        Row(Modifier.padding(horizontal = 15.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Icon(icon, null, tint = Accent, modifier = Modifier.size(18.dp))
+            Text(label, fontSize = 12.sp)
+        }
     }
 }
 

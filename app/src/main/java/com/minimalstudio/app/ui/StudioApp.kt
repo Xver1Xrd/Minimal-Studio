@@ -66,6 +66,7 @@ fun StudioApp(vm: StudioViewModel, shared: SharedContent?, theme: ThemeConfig, o
                     attachments = attachments,
                     onKind = { kind = it },
                     onAdd = { route = StudioRoute.Editor(null, kind) },
+                    onAddKind = { selectedKind -> kind = selectedKind; route = StudioRoute.Editor(null, selectedKind) },
                     onDetail = { route = StudioRoute.Details(it) },
                     onEdit = { route = StudioRoute.Editor(it.id, it.kind) },
                     onSettings = { route = StudioRoute.Settings },
