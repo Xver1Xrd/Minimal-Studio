@@ -86,7 +86,7 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 IconPill(Icons.Default.Search, "Поиск") { searchActive = !searchActive; if (!searchActive) query = "" }
-                StudioIsland(kind, onKind)
+                Spacer(Modifier.weight(1f))
                 IconPill(Icons.Default.Tune, "Настройки", onSettings)
             }
 
@@ -197,7 +197,7 @@ fun HomeScreen(
         if (selected.isEmpty()) {
             FloatingActionButton(
                 onClick = onAdd,
-                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 24.dp, bottom = 25.dp),
+                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 24.dp, bottom = 94.dp),
                 shape = CircleShape,
                 containerColor = Accent, contentColor = Ink
             ) { Icon(Icons.Default.Add, "Добавить карточку", modifier = Modifier.size(27.dp)) }
@@ -212,6 +212,13 @@ fun HomeScreen(
                 IconButton(onClick = { selected.mapNotNull { id -> cards.firstOrNull { it.id == id } }.forEach(onArchive); selected = emptySet() }) { Icon(Icons.Default.Archive, "Архивировать") }
                 IconButton(onClick = { deleting = cards.firstOrNull { it.id in selected } }) { Icon(Icons.Default.DeleteOutline, "Удалить выбранные", tint = MaterialTheme.colorScheme.error) }
             }
+        }
+        if (selected.isEmpty()) {
+            StudioIsland(
+                kind = kind,
+                onKind = onKind,
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 20.dp)
+            )
         }
     }
 

@@ -1,10 +1,13 @@
 package com.minimalstudio.app.ui
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -19,37 +22,89 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.consume
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.IntOffset
 import com.minimalstudio.app.data.CardKind
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 val StudioShape = RoundedCornerShape(22.dp)
 
 @Composable
 fun StudioIsland(kind: String, onKind: (String) -> Unit, modifier: Modifier = Modifier) {
-    Row(
+    var widthPx by remember { mutableFloatStateOf(1f) }
+    var dragging by remember { mutableStateOf(false) }
+    var dragFraction by remember { mutableFloatStateOf(if (kind == CardKind.WISH) 0f else 1f) }
+    val selectedFraction = if (kind == CardKind.WISH) 0f else 1f
+    val indicatorFraction by animateFloatAsState(
+        targetValue = if (dragging) dragFraction else selectedFraction,
+        animationSpec = if (dragging) tween(durationMillis = 0) else spring(stiffness = Spring.StiffnessMediumLow),
+        label = "islandIndicator"
+    )
+    val pull by animateFloatAsState(
+        targetValue = if (dragging) abs(dragFraction - selectedFraction) else 0f,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "islandPull"
+    )
+    val indicatorOffset = ((widthPx - 10.dp.value) / 2f * indicatorFraction).roundToInt()
+
+    Box(
         modifier = modifier
+            .widthIn(min = 230.dp)
+            .height(58.dp)
             .clip(CircleShape)
             .background(Surface)
-            .padding(5.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .onSizeChanged { widthPx = it.width.toFloat() }
+            .pointerInput(kind, widthPx) {
+                detectHorizontalDragGestures(
+                    onDragStart = {
+                        dragging = true
+                        dragFraction = selectedFraction
+                    },
+                    onHorizontalDrag = { change, amount ->
+                        change.consume()
+                        dragFraction = (dragFraction + amount / (widthPx / 2f)).coerceIn(0f, 1f)
+                    },
+                    onDragEnd = {
+                        dragging = false
+                        onKind(if (dragFraction >= 0.5f) CardKind.IDEA else CardKind.WISH)
+                    },
+                    onDragCancel = { dragging = false }
+                )
+            }
     ) {
-        listOf(CardKind.WISH to "Хотелки", CardKind.IDEA to "Идеи").forEach { (value, title) ->
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .widthIn(min = 110.dp)
+                .fillMaxWidth(0.5f)
+                .padding(5.dp)
+                .offset { IntOffset(indicatorOffset, 0) }
+                .clip(CircleShape)
+                .background(Paper.copy(alpha = 1f - pull * 0.12f))
+                .graphicsLayer { scaleX = 1f + pull * 0.12f }
+        )
+        Row(Modifier.fillMaxSize()) {
+            listOf(CardKind.WISH to "Хотелки", CardKind.IDEA to "Идеи").forEach { (value, title) ->
             val active = kind == value
-            val bg by animateColorAsState(if (active) Paper else Surface, animationSpec = spring(), label = "islandBackground")
             val fg by animateColorAsState(if (active) Ink else Muted, animationSpec = spring(), label = "islandText")
             Box(
                 modifier = Modifier
-                    .clip(CircleShape)
-                    .background(bg)
-                    .clickable { onKind(value) }
-                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .clickable { onKind(value) },
                 contentAlignment = Alignment.Center
             ) {
                 Text(title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = fg)
             }
+        }
         }
     }
 }
