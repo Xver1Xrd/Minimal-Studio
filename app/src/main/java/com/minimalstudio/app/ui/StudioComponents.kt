@@ -107,7 +107,7 @@ fun CategoryArtwork(kind: String, modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center
     ) {
         Icon(
-            if (kind == CardKind.WISH) Icons.Default.FavoriteBorder else Icons.Default.LightbulbOutline,
+            if (kind == CardKind.WISH) Icons.Default.FavoriteBorder else Icons.Default.Lightbulb,
             contentDescription = null,
             tint = Accent.copy(alpha = 0.85f),
             modifier = Modifier.size(42.dp)

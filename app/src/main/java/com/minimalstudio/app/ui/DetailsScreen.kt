@@ -136,7 +136,7 @@ fun DetailsScreen(
                     linkedCards.forEach { related ->
                         Surface(onClick = { onLinkedOpen(related.id) }, color = Surface, shape = RoundedCornerShape(15.dp)) {
                             Row(Modifier.fillMaxWidth().padding(13.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(if (related.kind == CardKind.WISH) Icons.Default.FavoriteBorder else Icons.Default.LightbulbOutline, null, tint = Accent)
+                                Icon(if (related.kind == CardKind.WISH) Icons.Default.FavoriteBorder else Icons.Default.Lightbulb, null, tint = Accent)
                                 Spacer(Modifier.width(11.dp))
                                 Text(related.title, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 13.sp)
                                 Icon(Icons.Default.ChevronRight, null, tint = Muted, modifier = Modifier.size(18.dp))
