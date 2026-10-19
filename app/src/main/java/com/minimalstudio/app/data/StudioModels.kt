@@ -21,6 +21,7 @@ data class StudioCard(
     val description: String = "",
     val notes: String = "",
     val price: String = "",
+    @ColumnInfo(defaultValue = "''") val savedAmount: String = "",
     val url: String = "",
     val collection: String = "",
     val category: String = "",
@@ -77,7 +78,7 @@ fun writeLinkedIds(ids: List<String>): String = JSONArray().apply {
 
 fun StudioCard.toJson(): JSONObject = JSONObject().apply {
     put("id", id); put("kind", kind); put("title", title)
-    put("description", description); put("notes", notes); put("price", price)
+    put("description", description); put("notes", notes); put("price", price); put("savedAmount", savedAmount)
     put("url", url); put("collection", collection); put("category", category)
     put("tags", tags); put("status", status); put("priority", priority)
     put("tasksJson", tasksJson); put("linkedIds", linkedIds); put("coverPath", coverPath)
@@ -92,6 +93,7 @@ fun JSONObject.asCard(): StudioCard = StudioCard(
     description = optString("description"),
     notes = optString("notes"),
     price = optString("price"),
+    savedAmount = optString("savedAmount"),
     url = optString("url"),
     collection = optString("collection"),
     category = optString("category"),

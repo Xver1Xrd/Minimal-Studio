@@ -5,7 +5,7 @@
 - Keep the two spaces (`wish`, `idea`) and the top pill-shaped `StudioIsland`.
 - The Android manifest must NOT add INTERNET permission or unnecessary broad storage permissions.
 - Build with JDK 17, SDK Platform 36, Build Tools 35.0.0, Gradle 8.13, AGP 8.13.2, Compose BOM 2026.06.00.
-- Room schema version is 2. A migration from schema 1 adds `deletedAt` and keeps all records. Never use destructive migration fallback.
+- Room schema version is 3. Migrations preserve all records: schema 2 adds `deletedAt`; schema 3 adds `savedAmount`. Never use destructive migration fallback.
 - Cards are soft-deleted into Trash; permanent deletion and file removal require deliberate user action.
 - The editor saves a private text draft and navigates away only after `StudioRepository.save()` succeeds.
 - All repository writes and backup operations use a Mutex to avoid cross-operation file/database races.

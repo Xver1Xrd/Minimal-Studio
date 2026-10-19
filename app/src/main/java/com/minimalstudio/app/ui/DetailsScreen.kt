@@ -1,5 +1,6 @@
 package com.minimalstudio.app.ui
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -78,6 +79,18 @@ fun DetailsScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     StudioLabel("СТОИМОСТЬ")
                     Text(card.price, style = MaterialTheme.typography.headlineSmall, color = Accent)
+                }
+            }
+            if (isWish && card.price.isNotBlank() && card.savedAmount.isNotBlank()) {
+                val target = card.price.digitsAmount()
+                val saved = card.savedAmount.digitsAmount()
+                if (target > 0) {
+                    val progress by animateFloatAsState((saved.toFloat() / target).coerceIn(0f, 1f), label = "savingProgress")
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        StudioLabel("НАКОПЛЕНИЕ")
+                        LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth().height(9.dp).clip(CircleShape), color = Accent, trackColor = SurfaceRaised)
+                        Text("${card.savedAmount} из ${card.price} · ${(progress * 100).toInt()}%", color = Muted, fontSize = 12.sp)
+                    }
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
@@ -235,3 +248,5 @@ fun DetailsScreen(
 }
 
 private fun dateText(timestamp: Long): String = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(Date(timestamp))
+
+private fun String.digitsAmount(): Long = filter(Char::isDigit).toLongOrNull() ?: 0L

@@ -60,6 +60,7 @@ fun EditorScreen(
     var description by remember(key) { mutableStateOf(draft?.optString("description") ?: card?.description ?: if (sharedLink.isBlank()) shared?.text.orEmpty() else "") }
     var notes by remember(key) { mutableStateOf(draft?.optString("notes") ?: card?.notes.orEmpty()) }
     var price by remember(key) { mutableStateOf(draft?.optString("price") ?: card?.price.orEmpty()) }
+    var savedAmount by remember(key) { mutableStateOf(draft?.optString("savedAmount") ?: card?.savedAmount.orEmpty()) }
     var url by remember(key) { mutableStateOf(draft?.optString("url") ?: card?.url ?: sharedLink) }
     var category by remember(key) { mutableStateOf(draft?.optString("category") ?: card?.category.orEmpty()) }
     var collection by remember(key) { mutableStateOf(draft?.optString("collection") ?: card?.collection.orEmpty()) }
@@ -84,12 +85,12 @@ fun EditorScreen(
     }
 
     // Debounced draft survives process death and device restarts. Never persist external URIs.
-    LaunchedEffect(key, title, description, notes, price, url, category, collection, tags, status,
+    LaunchedEffect(key, title, description, notes, price, savedAmount, url, category, collection, tags, status,
         priority, favorite, taskLines, linkedIds) {
         delay(600)
         val payload = JSONObject().apply {
             put("title", title); put("description", description); put("notes", notes)
-            put("price", price); put("url", url); put("category", category)
+            put("price", price); put("savedAmount", savedAmount); put("url", url); put("category", category)
             put("collection", collection); put("tags", tags); put("status", status)
             put("priority", priority); put("favorite", favorite); put("taskLines", taskLines)
             put("linkedIds", writeLinkedIds(linkedIds.toList()))
@@ -156,7 +157,10 @@ fun EditorScreen(
             }
 
             StudioLabel(if (isWish) "ПОДРОБНОСТИ ЖЕЛАНИЯ" else "ДЕТАЛИ ИДЕИ")
-            if (isWish) StudioTextInput(price, { price = it }, "Цена и валюта", "Например: 29 990 ₽", keyboardType = KeyboardType.Text)
+            if (isWish) {
+                StudioTextInput(price, { price = it }, "Цена и валюта", "Например: 29 990 ₽", keyboardType = KeyboardType.Text)
+                StudioTextInput(savedAmount, { savedAmount = it }, "Уже накоплено", "Например: 10 000 ₽", keyboardType = KeyboardType.Text)
+            }
             StudioTextInput(url, { url = it }, "Ссылка", "https://example.com")
             StudioTextInput(category, { category = it }, "Категория", if (isWish) "Игры, путешествия, техника..." else "Приложение, вдохновение, проект...")
             StudioTextInput(collection, { collection = it }, "Коллекция", "Например: Мои проекты")
@@ -234,7 +238,7 @@ fun EditorScreen(
                         onSave(
                             (card ?: StudioCard(kind = kind, id = UUID.randomUUID().toString())).copy(
                                 kind = kind, title = title.trim(), description = description.trim(),
-                                notes = notes, price = price.trim(), url = url.trim(), category = category.trim(),
+                                notes = notes, price = price.trim(), savedAmount = savedAmount.trim(), url = url.trim(), category = category.trim(),
                                 collection = collection.trim(), tags = tags.trim(), status = status,
                                 priority = priority, favorite = favorite, tasksJson = writeTasks(tasks),
                                 linkedIds = writeLinkedIds(linkedIds.toList())
