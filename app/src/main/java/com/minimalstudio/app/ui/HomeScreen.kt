@@ -1,7 +1,12 @@
 package com.minimalstudio.app.ui
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.Crossfade
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -105,7 +110,13 @@ fun HomeScreen(
                 Column(Modifier.weight(1f)) {
                     StudioLabel("ТВОЯ КОЛЛЕКЦИЯ")
                     Spacer(Modifier.height(7.dp))
-                    Text(if (kind == CardKind.WISH) "Мои хотелки" else "Мои идеи", style = MaterialTheme.typography.headlineMedium, color = Paper)
+                    AnimatedContent(
+                        targetState = kind,
+                        transitionSpec = { (slideInHorizontally { it / 3 } + fadeIn()).togetherWith(slideOutHorizontally { -it / 3 } + fadeOut()) },
+                        label = "librarySwitch"
+                    ) { currentKind ->
+                        Text(if (currentKind == CardKind.WISH) "Мои хотелки" else "Мои идеи", style = MaterialTheme.typography.headlineMedium, color = Paper)
+                    }
                     Spacer(Modifier.height(5.dp))
                     Text("${cards.count { it.kind == kind && !it.archived }} сохранено", fontSize = 12.sp, color = Muted)
                 }
@@ -217,6 +228,7 @@ fun HomeScreen(
             StudioIsland(
                 kind = kind,
                 onKind = onKind,
+                hasPriority = cards.any { it.kind != kind && it.priority >= 2 && !it.archived },
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 20.dp)
             )
         }

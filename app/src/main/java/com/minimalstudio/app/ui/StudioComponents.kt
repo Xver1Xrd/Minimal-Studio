@@ -3,6 +3,8 @@ package com.minimalstudio.app.ui
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -26,6 +28,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -39,11 +43,17 @@ import kotlin.math.roundToInt
 val StudioShape = RoundedCornerShape(22.dp)
 
 @Composable
-fun StudioIsland(kind: String, onKind: (String) -> Unit, modifier: Modifier = Modifier) {
+fun StudioIsland(kind: String, onKind: (String) -> Unit, hasPriority: Boolean = false, modifier: Modifier = Modifier) {
     var widthPx by remember { mutableFloatStateOf(1f) }
     var dragging by remember { mutableStateOf(false) }
     var dragFraction by remember { mutableFloatStateOf(if (kind == CardKind.WISH) 0f else 1f) }
+    val haptic = LocalHapticFeedback.current
     val selectedFraction = if (kind == CardKind.WISH) 0f else 1f
+    val idle = rememberInfiniteTransition(label = "islandIdle")
+    val idleScale by idle.animateFloat(
+        initialValue = 1f, targetValue = 1.018f,
+        animationSpec = infiniteRepeatable(tween(1900, delayMillis = 2600)), label = "islandBreathe"
+    )
     val indicatorFraction by animateFloatAsState(
         targetValue = if (dragging) dragFraction else selectedFraction,
         animationSpec = if (dragging) tween(durationMillis = 0) else spring(stiffness = Spring.StiffnessMediumLow),
@@ -54,9 +64,16 @@ fun StudioIsland(kind: String, onKind: (String) -> Unit, modifier: Modifier = Mo
         animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
         label = "islandPull"
     )
+    val islandScale by animateFloatAsState(if (dragging) 0.97f else idleScale, spring(stiffness = Spring.StiffnessMediumLow), label = "islandPress")
     val indicatorOffset = ((widthPx - 10.dp.value) / 2f * indicatorFraction).roundToInt()
     val dragState = rememberDraggableState { amount ->
-        dragFraction = (dragFraction + amount / (widthPx / 2f)).coerceIn(0f, 1f)
+        val beforeIdea = dragFraction >= 0.5f
+        val raw = (dragFraction + amount / (widthPx / 2f)).coerceIn(0f, 1f)
+        dragFraction = when {
+            raw in 0.43f..0.57f -> if (amount >= 0f) 0.57f else 0.43f
+            else -> raw
+        }
+        if (beforeIdea != (dragFraction >= 0.5f)) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
     }
 
     Box(
@@ -66,16 +83,26 @@ fun StudioIsland(kind: String, onKind: (String) -> Unit, modifier: Modifier = Mo
             .clip(CircleShape)
             .background(Surface)
             .onSizeChanged { widthPx = it.width.toFloat() }
+            .graphicsLayer { scaleX = islandScale; scaleY = islandScale }
             .draggable(
                 state = dragState,
                 orientation = Orientation.Horizontal,
                 onDragStarted = { dragging = true; dragFraction = selectedFraction },
                 onDragStopped = {
                     dragging = false
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     onKind(if (dragFraction >= 0.5f) CardKind.IDEA else CardKind.WISH)
                 }
             )
     ) {
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .padding(4.dp)
+                .clip(CircleShape)
+                .background(Brush.horizontalGradient(listOf(Accent.copy(alpha = 0.20f), Accent.copy(alpha = 0.02f))))
+                .graphicsLayer { alpha = pull }
+        )
         Box(
             modifier = Modifier
                 .fillMaxHeight()
@@ -84,20 +111,33 @@ fun StudioIsland(kind: String, onKind: (String) -> Unit, modifier: Modifier = Mo
                 .offset { IntOffset(indicatorOffset, 0) }
                 .clip(CircleShape)
                 .background(Paper.copy(alpha = 1f - pull * 0.12f))
-                .graphicsLayer { scaleX = 1f + pull * 0.12f }
+                .graphicsLayer {
+                    scaleX = 1f + pull * 0.14f
+                    translationY = -pull * 2f
+                }
         )
         Row(Modifier.fillMaxSize()) {
             listOf(CardKind.WISH to "Хотелки", CardKind.IDEA to "Идеи").forEach { (value, title) ->
             val active = kind == value
             val fg by animateColorAsState(if (active) Ink else Muted, animationSpec = spring(), label = "islandText")
+            val textScale by animateFloatAsState(if (active) 1.06f else 0.94f, spring(stiffness = Spring.StiffnessMediumLow), label = "islandTextScale")
+            val textLift by animateFloatAsState(if (active) -2f else 2f, spring(stiffness = Spring.StiffnessMediumLow), label = "islandTextLift")
+            val iconScale by animateFloatAsState(if (active) 1.12f else 0.82f, spring(stiffness = Spring.StiffnessMediumLow), label = "islandIconScale")
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .clickable { onKind(value) },
+                    .clickable {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onKind(value)
+                    },
                 contentAlignment = Alignment.Center
             ) {
-                Text(title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = fg)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp), modifier = Modifier.graphicsLayer { scaleX = textScale; scaleY = textScale; translationY = textLift }) {
+                    Icon(if (value == CardKind.WISH) Icons.Default.FavoriteBorder else Icons.Default.Lightbulb, null, tint = fg, modifier = Modifier.size(14.dp).graphicsLayer { scaleX = iconScale; scaleY = iconScale; rotationZ = if (active) 0f else -4f })
+                    Text(title, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = fg)
+                    if (hasPriority && !active) Box(Modifier.size(6.dp).clip(CircleShape).background(Rose).graphicsLayer { alpha = 0.85f + pull * 0.15f })
+                }
             }
         }
         }
