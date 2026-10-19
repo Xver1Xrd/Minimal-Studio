@@ -3,6 +3,8 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -41,3 +43,13 @@ jobs:
           name: minimal-studio-1.1.0-unsigned-release
           path: app/build/outputs/apk/release/app-release-unsigned.apk
           if-no-files-found: error
+      - name: Publish debug APK to GitHub Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create v1.1.0-debug app/build/outputs/apk/debug/app-debug.apk \
+            --target "$GITHUB_SHA" \
+            --title "Minimal Studio 1.1.0 — debug" \
+            --notes "Автоматическая debug-сборка. Перед публикацией пройдены lint и unit-тесты." \
+            || gh release upload v1.1.0-debug app/build/outputs/apk/debug/app-debug.apk --clobber
