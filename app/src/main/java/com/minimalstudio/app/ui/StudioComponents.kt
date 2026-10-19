@@ -1,0 +1,160 @@
+package com.minimalstudio.app.ui
+
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.minimalstudio.app.data.CardKind
+
+val StudioShape = RoundedCornerShape(22.dp)
+
+@Composable
+fun StudioIsland(kind: String, onKind: (String) -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .clip(CircleShape)
+            .background(Surface)
+            .padding(5.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        listOf(CardKind.WISH to "Хотелки", CardKind.IDEA to "Идеи").forEach { (value, title) ->
+            val active = kind == value
+            val bg by animateColorAsState(if (active) Paper else Surface, animationSpec = spring(), label = "islandBackground")
+            val fg by animateColorAsState(if (active) Ink else Muted, animationSpec = spring(), label = "islandText")
+            Box(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(bg)
+                    .clickable { onKind(value) }
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = fg)
+            }
+        }
+    }
+}
+
+@Composable
+fun IconPill(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier.size(42.dp).clip(CircleShape).background(Surface)
+    ) { Icon(icon, contentDescription = label, tint = Paper, modifier = Modifier.size(20.dp)) }
+}
+
+@Composable
+fun PageHeader(title: String, caption: String?, onBack: () -> Unit, action: (@Composable () -> Unit)? = null) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconPill(Icons.AutoMirrored.Filled.ArrowBack, "Назад", onBack)
+        Column(modifier = Modifier.weight(1f).padding(start = 14.dp)) {
+            Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.titleMedium)
+            if (!caption.isNullOrBlank()) Text(caption, fontSize = 11.sp, color = Muted)
+        }
+        action?.invoke()
+    }
+}
+
+@Composable
+fun StudioLabel(label: String, modifier: Modifier = Modifier) {
+    Text(label.uppercase(), modifier = modifier, color = Muted, fontSize = 10.sp, letterSpacing = 1.5.sp, fontWeight = FontWeight.SemiBold)
+}
+
+@Composable
+fun MetadataPill(text: String, color: Color = Accent, icon: androidx.compose.ui.graphics.vector.ImageVector? = null) {
+    Row(
+        modifier = Modifier.clip(CircleShape).background(color.copy(alpha = 0.11f)).padding(horizontal = 11.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp)
+    ) {
+        if (icon != null) Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(13.dp))
+        Text(text, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = color)
+    }
+}
+
+@Composable
+fun CategoryArtwork(kind: String, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .background(
+                Brush.linearGradient(
+                    if (kind == CardKind.WISH) listOf(Color(0xFF38324B), Color(0xFF242634), Color(0xFF202129))
+                    else listOf(Color(0xFF3A3D4B), Color(0xFF292736), Color(0xFF23222B))
+                )
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            if (kind == CardKind.WISH) Icons.Default.FavoriteBorder else Icons.Default.LightbulbOutline,
+            contentDescription = null,
+            tint = Accent.copy(alpha = 0.85f),
+            modifier = Modifier.size(42.dp)
+        )
+    }
+}
+
+@Composable
+fun EmptyLibrary(kind: String, onAdd: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 30.dp, vertical = 65.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(15.dp)
+    ) {
+        Box(
+            Modifier.size(112.dp).clip(RoundedCornerShape(35.dp)).background(Surface),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                if (kind == CardKind.WISH) Icons.Default.FavoriteBorder else Icons.Default.AutoAwesome,
+                null, tint = Accent, modifier = Modifier.size(48.dp)
+            )
+        }
+        Spacer(Modifier.height(5.dp))
+        Text(if (kind == CardKind.WISH) "Место для твоих желаний" else "Каждая идея важна", style = MaterialTheme.typography.titleLarge)
+        Text(
+            if (kind == CardKind.WISH) "Сохрани вещь, игру, поездку или просто мечту. Всё, что хочется запомнить."
+            else "Записывай мысли, прикладывай изображения и файлы. Идеи можно развить позже.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Muted
+        )
+        Button(onClick = onAdd, colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Ink)) {
+            Icon(Icons.Default.Add, null, Modifier.size(18.dp))
+            Spacer(Modifier.width(7.dp))
+            Text(if (kind == CardKind.WISH) "Новая хотелка" else "Новая идея")
+        }
+    }
+}
+
+@Composable
+fun DangerConfirmation(title: String, message: String, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = { Text(message) },
+        confirmButton = { TextButton(onClick = onConfirm) { Text("Удалить", color = MaterialTheme.colorScheme.error) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
+        containerColor = SurfaceRaised
+    )
+}
