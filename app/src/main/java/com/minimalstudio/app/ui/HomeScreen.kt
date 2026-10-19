@@ -296,7 +296,8 @@ fun CardCover(kind: String, path: String, modifier: Modifier = Modifier) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun ActionItem(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, tint: Color = Paper, onClick: () -> Unit) {
+private fun ActionItem(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, tint: Color? = null, onClick: () -> Unit) {
+    val resolvedTint = tint ?: Paper
     Row(
         modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(13.dp))
             .combinedClickable(onClick = onClick, onLongClick = onClick)
@@ -304,7 +305,7 @@ private fun ActionItem(icon: androidx.compose.ui.graphics.vector.ImageVector, la
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(15.dp)
     ) {
-        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(21.dp))
-        Text(label, color = tint, fontSize = 14.sp)
+        Icon(icon, contentDescription = null, tint = resolvedTint, modifier = Modifier.size(21.dp))
+        Text(label, color = resolvedTint, fontSize = 14.sp)
     }
 }

@@ -138,14 +138,15 @@ fun StudioLabel(label: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun MetadataPill(text: String, color: Color = Accent, icon: androidx.compose.ui.graphics.vector.ImageVector? = null) {
+fun MetadataPill(text: String, color: Color? = null, icon: androidx.compose.ui.graphics.vector.ImageVector? = null) {
+    val resolvedColor = color ?: Accent
     Row(
-        modifier = Modifier.clip(CircleShape).background(color.copy(alpha = 0.11f)).padding(horizontal = 11.dp, vertical = 7.dp),
+        modifier = Modifier.clip(CircleShape).background(resolvedColor.copy(alpha = 0.11f)).padding(horizontal = 11.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(5.dp)
     ) {
-        if (icon != null) Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(13.dp))
-        Text(text, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = color)
+        if (icon != null) Icon(icon, contentDescription = null, tint = resolvedColor, modifier = Modifier.size(13.dp))
+        Text(text, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = resolvedColor)
     }
 }
 

@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.minimalstudio.app.ui.StudioApp
 import com.minimalstudio.app.ui.StudioTheme
+import com.minimalstudio.app.ui.ThemeStore
 
 /** An incoming Android share can open a new card with its text and attachments prefilled. */
 data class SharedContent(val id: Long = System.nanoTime(), val text: String = "", val uris: List<Uri> = emptyList())
@@ -23,9 +24,14 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         receive(intent)
         setContent {
-            StudioTheme {
+            val themeStore = remember { ThemeStore(applicationContext) }
+            var theme by remember { mutableStateOf(themeStore.load()) }
+            StudioTheme(theme) {
                 val model: StudioViewModel = viewModel()
-                StudioApp(model, share, onShareHandled = { share = null })
+                StudioApp(model, share, theme, onThemeChange = { updated ->
+                    theme = updated
+                    themeStore.save(updated)
+                }, onShareHandled = { share = null })
             }
         }
     }

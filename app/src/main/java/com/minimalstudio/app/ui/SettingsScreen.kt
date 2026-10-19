@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,8 +23,9 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-fun SettingsScreen(vm: StudioViewModel, total: Int, trashed: Int, onTrash: () -> Unit, onBack: () -> Unit) {
+fun SettingsScreen(vm: StudioViewModel, total: Int, trashed: Int, theme: ThemeConfig, onThemeChange: (ThemeConfig) -> Unit, onTrash: () -> Unit, onBack: () -> Unit) {
     var confirmRestore by remember { mutableStateOf<Uri?>(null) }
+    var customizeTheme by remember { mutableStateOf(false) }
     val exporter = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
         if (uri != null) vm.export(uri)
     }
@@ -43,6 +45,8 @@ fun SettingsScreen(vm: StudioViewModel, total: Int, trashed: Int, onTrash: () ->
                     MetadataPill("$total карточек локально")
                 }
             }
+            StudioLabel("ОФОРМЛЕНИЕ")
+            SettingsAction(Icons.Default.Palette, "Тема и цвета", "${themeLabel(theme.preset)} · ${accentLabel(theme.accent)} · ${cornerLabel(theme.cornerStyle)}") { customizeTheme = true }
             StudioLabel("ХРАНЕНИЕ ДАННЫХ")
             SettingsAction(Icons.Default.DeleteOutline, "Корзина ($trashed)", "Восстановить удалённые карточки или освободить место", onTrash)
             SettingsAction(Icons.Default.FileUpload, "Создать резервную копию", "Сохранить карточки, заметки, фото и файлы одним ZIP") {
@@ -76,7 +80,43 @@ fun SettingsScreen(vm: StudioViewModel, total: Int, trashed: Int, onTrash: () ->
             containerColor = SurfaceRaised
         )
     }
+    if (customizeTheme) {
+        ThemeCustomizer(theme = theme, onChange = onThemeChange, onDismiss = { customizeTheme = false })
+    }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ThemeCustomizer(theme: ThemeConfig, onChange: (ThemeConfig) -> Unit, onDismiss: () -> Unit) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = SurfaceRaised) {
+        Column(Modifier.padding(horizontal = 22.dp, vertical = 8.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Text("Оформление", style = MaterialTheme.typography.headlineSmall)
+            Text("Все изменения применяются сразу и сохраняются только на этом устройстве.", color = Muted, fontSize = 12.sp)
+            ThemeOptionRow("Базовая тема", listOf("midnight" to "Ночь", "paper" to "Бумага", "forest" to "Лес", "ocean" to "Океан", "rose" to "Роза"), theme.preset) { onChange(theme.copy(preset = it)) }
+            ThemeOptionRow("Акцент", listOf("lilac" to "Лиловый", "mint" to "Мята", "sky" to "Небо", "peach" to "Персик", "rose" to "Роза", "lemon" to "Лимон"), theme.accent) { onChange(theme.copy(accent = it)) }
+            ThemeOptionRow("Скругления", listOf("compact" to "Строго", "soft" to "Мягко", "round" to "Кругло"), theme.cornerStyle) { onChange(theme.copy(cornerStyle = it)) }
+            TextButton(onClick = { onChange(ThemeConfig()) }, modifier = Modifier.align(Alignment.End)) { Text("Сбросить оформление") }
+            Spacer(Modifier.height(22.dp))
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ThemeOptionRow(title: String, options: List<Pair<String, String>>, selected: String, onSelect: (String) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        Text(title, style = MaterialTheme.typography.titleSmall)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+            options.forEach { (value, label) ->
+                FilterChip(selected = selected == value, onClick = { onSelect(value) }, label = { Text(label, fontSize = 12.sp) })
+            }
+        }
+    }
+}
+
+private fun themeLabel(value: String) = mapOf("midnight" to "Ночь", "paper" to "Бумага", "forest" to "Лес", "ocean" to "Океан", "rose" to "Роза")[value] ?: "Ночь"
+private fun accentLabel(value: String) = mapOf("lilac" to "Лиловый", "mint" to "Мята", "sky" to "Небо", "peach" to "Персик", "rose" to "Роза", "lemon" to "Лимон")[value] ?: "Лиловый"
+private fun cornerLabel(value: String) = mapOf("compact" to "Строго", "soft" to "Мягко", "round" to "Кругло")[value] ?: "Мягко"
 
 @Composable
 private fun SettingsAction(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, subtitle: String, onClick: () -> Unit) {

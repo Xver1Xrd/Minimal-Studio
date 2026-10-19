@@ -29,7 +29,7 @@ sealed interface StudioRoute {
 }
 
 @Composable
-fun StudioApp(vm: StudioViewModel, shared: SharedContent?, onShareHandled: () -> Unit) {
+fun StudioApp(vm: StudioViewModel, shared: SharedContent?, theme: ThemeConfig, onThemeChange: (ThemeConfig) -> Unit, onShareHandled: () -> Unit) {
     val cards by vm.cards.collectAsState(initial = emptyList())
     val attachments by vm.attachments.collectAsState(initial = emptyList())
     val trash by vm.trash.collectAsState(initial = emptyList())
@@ -113,6 +113,8 @@ fun StudioApp(vm: StudioViewModel, shared: SharedContent?, onShareHandled: () ->
                     vm = vm,
                     total = cards.size,
                     trashed = trash.size,
+                    theme = theme,
+                    onThemeChange = onThemeChange,
                     onTrash = { route = StudioRoute.Trash },
                     onBack = { route = StudioRoute.Home }
                 )
