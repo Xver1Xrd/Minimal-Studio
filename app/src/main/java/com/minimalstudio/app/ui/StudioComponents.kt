@@ -8,7 +8,9 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -24,7 +26,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -54,36 +55,30 @@ fun StudioIsland(kind: String, onKind: (String) -> Unit, modifier: Modifier = Mo
         label = "islandPull"
     )
     val indicatorOffset = ((widthPx - 10.dp.value) / 2f * indicatorFraction).roundToInt()
+    val dragState = rememberDraggableState { amount ->
+        dragFraction = (dragFraction + amount / (widthPx / 2f)).coerceIn(0f, 1f)
+    }
 
     Box(
         modifier = modifier
-            .widthIn(min = 230.dp)
-            .height(58.dp)
+            .width(188.dp)
+            .height(48.dp)
             .clip(CircleShape)
             .background(Surface)
             .onSizeChanged { widthPx = it.width.toFloat() }
-            .pointerInput(kind, widthPx) {
-                detectHorizontalDragGestures(
-                    onDragStart = {
-                        dragging = true
-                        dragFraction = selectedFraction
-                    },
-                    onHorizontalDrag = { change, amount ->
-                        change.consume()
-                        dragFraction = (dragFraction + amount / (widthPx / 2f)).coerceIn(0f, 1f)
-                    },
-                    onDragEnd = {
-                        dragging = false
-                        onKind(if (dragFraction >= 0.5f) CardKind.IDEA else CardKind.WISH)
-                    },
-                    onDragCancel = { dragging = false }
-                )
-            }
+            .draggable(
+                state = dragState,
+                orientation = Orientation.Horizontal,
+                onDragStarted = { dragging = true; dragFraction = selectedFraction },
+                onDragStopped = {
+                    dragging = false
+                    onKind(if (dragFraction >= 0.5f) CardKind.IDEA else CardKind.WISH)
+                }
+            )
     ) {
         Box(
             modifier = Modifier
                 .fillMaxHeight()
-                .widthIn(min = 110.dp)
                 .fillMaxWidth(0.5f)
                 .padding(5.dp)
                 .offset { IntOffset(indicatorOffset, 0) }
